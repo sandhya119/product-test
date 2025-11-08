@@ -27,24 +27,26 @@
   <table class="table table-bordered bg-white">
     <thead class="table-dark">
       <tr>
-        <th>Name</th><th>Qty</th><th>Price</th><th>Date</th><th>Total</th>
+        <th>Name</th><th>Qty</th><th>Price</th><th>Date</th><th>Total</th><th>Action</th>
       </tr>
     </thead>
     <tbody id="tableBody">
       @php $sum = 0; @endphp
-      @foreach($products as $p)
+      @foreach($products as $index => $p)
         @php $sum += $p['total']; @endphp
-        <tr>
-          <td>{{ $p['name'] }}</td>
-          <td>{{ $p['qty'] }}</td>
-          <td>{{ $p['price'] }}</td>
+        <tr data-index="{{ $index }}">
+          <td class="name">{{ $p['name'] }}</td>
+          <td class="qty">{{ $p['qty'] }}</td>
+          <td class="price">{{ number_format($p['price'], 2) }}</td>
           <td>{{ $p['datetime'] }}</td>
-          <td>{{ $p['total'] }}</td>
+          <td class="total">{{ number_format($p['total'], 2) }}</td>
+          <td><button class="btn btn-sm btn-primary editBtn">Edit</button></td>
         </tr>
       @endforeach
       <tr class="fw-bold table-info">
         <td colspan="4" class="text-end">Grand Total</td>
-        <td>{{ $sum }}</td>
+        <td id="grandTotal">{{ number_format($sum, 2) }}</td>
+        <td></td>
       </tr>
     </tbody>
   </table>
@@ -54,10 +56,90 @@
 <script>
 $.ajaxSetup({ headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') } });
 
+// Add new product dynamically
 $('#form').on('submit', function(e){
   e.preventDefault();
-  $.post('/add', $(this).serialize(), function(){
-    location.reload();
+
+  let name = $(this).find('input[name="name"]').val();
+  let qty = parseFloat($(this).find('input[name="qty"]').val());
+  let price = parseFloat($(this).find('input[name="price"]').val());
+
+  $.post('/add', { name: name, qty: qty, price: price }, function(response){
+    let product = response.products[0]; // latest product added
+    let formattedPrice = parseFloat(product.price).toFixed(2);
+    let formattedTotal = (parseFloat(product.qty) * parseFloat(product.price)).toFixed(2);
+
+    // Prepend new row
+    let newRow = `<tr data-index="0">
+      <td class="name">${product.name}</td>
+      <td class="qty">${product.qty}</td>
+      <td class="price">${formattedPrice}</td>
+      <td>${product.datetime}</td>
+      <td class="total">${formattedTotal}</td>
+      <td><button class="btn btn-sm btn-primary editBtn">Edit</button></td>
+    </tr>`;
+
+    $('#tableBody tr:first').before(newRow);
+
+    // Recalculate Grand Total
+    let sum = 0;
+    $('#tableBody tr').each(function(){
+      let t = parseFloat($(this).find('.total').text());
+      if(!isNaN(t)) sum += t;
+    });
+    $('#grandTotal').text(sum.toFixed(2));
+
+    // Clear form
+    $('#form')[0].reset();
+
+    // Update data-index for all rows
+    $('#tableBody tr[data-index]').each(function(i){
+      $(this).attr('data-index', i);
+    });
+  });
+});
+
+// Edit / Save functionality
+$('#tableBody').on('click', '.editBtn', function(){
+  let row = $(this).closest('tr');
+
+  row.find('.name').html(`<input type="text" class="form-control editName" value="${row.find('.name').text()}">`);
+  row.find('.qty').html(`<input type="number" class="form-control editQty" value="${row.find('.qty').text()}">`);
+  row.find('.price').html(`<input type="number" step="0.01" class="form-control editPrice" value="${row.find('.price').text()}">`);
+
+  $(this).removeClass('btn-primary editBtn').addClass('btn-success saveBtn').text('Save');
+});
+
+$('#tableBody').on('click', '.saveBtn', function(){
+  let row = $(this).closest('tr');
+  let index = row.data('index');
+  let updatedName = row.find('.editName').val();
+  let updatedQty = parseFloat(row.find('.editQty').val());
+  let updatedPrice = parseFloat(row.find('.editPrice').val());
+
+  $.post('/update', {
+    index: index,
+    name: updatedName,
+    qty: updatedQty,
+    price: updatedPrice
+  }, function(response){
+    let formattedPrice = updatedPrice.toFixed(2);
+    let formattedTotal = (updatedQty * updatedPrice).toFixed(2);
+
+    row.find('.name').text(updatedName);
+    row.find('.qty').text(updatedQty);
+    row.find('.price').text(formattedPrice);
+    row.find('.total').text(formattedTotal);
+
+    row.find('.saveBtn').removeClass('btn-success saveBtn').addClass('btn-primary editBtn').text('Edit');
+
+    // Update Grand Total
+    let sum = 0;
+    $('#tableBody tr').each(function(){
+      let t = parseFloat($(this).find('.total').text());
+      if(!isNaN(t)) sum += t;
+    });
+    $('#grandTotal').text(sum.toFixed(2));
   });
 });
 </script>
