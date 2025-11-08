@@ -133,4 +133,4 @@ After this, the error should be resolved.
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ### Dashboard
-![Dashboard Screenshot](assets/screenshot-laravel)
+![Dashboard Screenshot](assets/screenshot-laravel.jpg)
