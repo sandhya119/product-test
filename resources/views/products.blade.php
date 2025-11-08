@@ -56,7 +56,7 @@
 <script>
 $.ajaxSetup({ headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') } });
 
-// Add new product dynamically
+
 $('#form').on('submit', function(e){
   e.preventDefault();
 
@@ -65,11 +65,11 @@ $('#form').on('submit', function(e){
   let price = parseFloat($(this).find('input[name="price"]').val());
 
   $.post('/add', { name: name, qty: qty, price: price }, function(response){
-    let product = response.products[0]; // latest product added
+    let product = response.products[0]; 
     let formattedPrice = parseFloat(product.price).toFixed(2);
     let formattedTotal = (parseFloat(product.qty) * parseFloat(product.price)).toFixed(2);
 
-    // Prepend new row
+    
     let newRow = `<tr data-index="0">
       <td class="name">${product.name}</td>
       <td class="qty">${product.qty}</td>
@@ -81,7 +81,7 @@ $('#form').on('submit', function(e){
 
     $('#tableBody tr:first').before(newRow);
 
-    // Recalculate Grand Total
+   
     let sum = 0;
     $('#tableBody tr').each(function(){
       let t = parseFloat($(this).find('.total').text());
@@ -89,17 +89,17 @@ $('#form').on('submit', function(e){
     });
     $('#grandTotal').text(sum.toFixed(2));
 
-    // Clear form
+   
     $('#form')[0].reset();
 
-    // Update data-index for all rows
+   
     $('#tableBody tr[data-index]').each(function(i){
       $(this).attr('data-index', i);
     });
   });
 });
 
-// Edit / Save functionality
+
 $('#tableBody').on('click', '.editBtn', function(){
   let row = $(this).closest('tr');
 
@@ -133,7 +133,7 @@ $('#tableBody').on('click', '.saveBtn', function(){
 
     row.find('.saveBtn').removeClass('btn-success saveBtn').addClass('btn-primary editBtn').text('Edit');
 
-    // Update Grand Total
+   
     let sum = 0;
     $('#tableBody tr').each(function(){
       let t = parseFloat($(this).find('.total').text());
