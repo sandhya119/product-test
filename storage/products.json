@@ -1,5 +1,12 @@
 [
     {
+        "name": "product 2",
+        "qty": 2,
+        "price": 200,
+        "datetime": "2025-11-08 03:57:21",
+        "total": 400
+    },
+    {
         "name": "product 1",
         "qty": 1,
         "price": 100,
